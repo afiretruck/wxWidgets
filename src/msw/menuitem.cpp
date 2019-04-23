@@ -165,7 +165,10 @@ class MenuDrawData
 public:
     // Wrapper around standard MARGINS structure providing some helper
     // functions and automatically initializing the margin fields to 0.
-    struct Margins : MARGINS
+    struct Margins
+#if wxUSE_UXTHEME
+        : MARGINS
+#endif // wxUSE_UXTHEME
     {
         Margins()
         {
@@ -193,6 +196,12 @@ public:
             rect.right += cyTopHeight;
             rect.bottom += cyBottomHeight;
         }
+
+#if !wxUSE_UXTHEME
+        // When MARGINS struct is not available, we need to define the fields
+        // we use ourselves.
+        int cxLeftWidth, cxRightWidth, cyTopHeight, cyBottomHeight;
+#endif // !wxUSE_UXTHEME
     };
 
     Margins ItemMargin;         // popup item margins
@@ -778,11 +787,11 @@ bool wxMenuItem::OnMeasureItem(size_t *width, size_t *height)
 
     if ( IsOwnerDrawn() )
     {
-        *width  = data->ItemMargin.GetTotalX();
-        *height = data->ItemMargin.GetTotalY();
-
         if ( IsSeparator() )
         {
+            *width  = data->ItemMargin.GetTotalX();
+            *height = data->ItemMargin.GetTotalY();
+
             *width  += data->SeparatorSize.cx
                      + data->SeparatorMargin.GetTotalX();
             *height += data->SeparatorSize.cy

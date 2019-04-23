@@ -280,7 +280,6 @@ public:
                                 const wxString& text,
                                 int argFlags = 0 ) const wxOVERRIDE;
     virtual bool DoSetAttribute( const wxString& name, wxVariant& value ) wxOVERRIDE;
-    virtual wxVariant DoGetAttribute( const wxString& name ) const wxOVERRIDE;
 
     virtual bool ValidateValue( wxVariant& value,
                                 wxPGValidationInfo& validationInfo ) const wxOVERRIDE;
@@ -317,7 +316,6 @@ public:
     virtual bool IntToValue( wxVariant& variant,
                              int number, int argFlags = 0 ) const wxOVERRIDE;
     virtual bool DoSetAttribute( const wxString& name, wxVariant& value ) wxOVERRIDE;
-    virtual wxVariant DoGetAttribute( const wxString& name ) const wxOVERRIDE;
 };
 
 // -----------------------------------------------------------------------
@@ -397,8 +395,6 @@ public:
     // the true index, and various property classes derived from
     // this take advantage of it.
     virtual int GetChoiceSelection() const wxOVERRIDE { return m_index; }
-
-    virtual void OnValidationFailure( wxVariant& pendingValue ) wxOVERRIDE;
 
 protected:
 
@@ -667,7 +663,7 @@ protected:
 
 // -----------------------------------------------------------------------
 
-// wxBoolProperty specific flags
+// wxBoolProperty, wxFlagsProperty specific flags
 #define wxPG_PROP_USE_CHECKBOX      wxPG_PROP_CLASS_SPECIFIC_1
 // DCC = Double Click Cycles
 #define wxPG_PROP_USE_DCC           wxPG_PROP_CLASS_SPECIFIC_2
@@ -796,8 +792,8 @@ wxValidator* PROPNAME::DoGetValidator () const \
 
 #if wxUSE_EDITABLELISTBOX
 
-class WXDLLIMPEXP_FWD_CORE wxEditableListBox;
-class WXDLLIMPEXP_FWD_CORE wxListEvent;
+#include "wx/bmpbuttn.h"
+#include "wx/editlbox.h"
 
 #define wxAEDIALOG_STYLE \
     (wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxOK | wxCANCEL | wxCENTRE)
@@ -810,13 +806,6 @@ public:
 
     void Init();
 
-    wxPGArrayEditorDialog( wxWindow *parent,
-                         const wxString& message,
-                         const wxString& caption,
-                         long style = wxAEDIALOG_STYLE,
-                         const wxPoint& pos = wxDefaultPosition,
-                         const wxSize& sz = wxDefaultSize );
-
     bool Create( wxWindow *parent,
                  const wxString& message,
                  const wxString& caption,
@@ -827,6 +816,15 @@ public:
     void EnableCustomNewAction()
     {
         m_hasCustomNewAction = true;
+    }
+
+    void SetNewButtonText(const wxString& text)
+    {
+        m_customNewButtonText = text;
+        if ( m_elb && m_elb->GetNewButton() )
+        {
+            m_elb->GetNewButton()->SetToolTip(text);
+        }
     }
 
     // Set value modified by dialog.
@@ -880,6 +878,7 @@ protected:
 
     bool            m_modified;
     bool            m_hasCustomNewAction;
+    wxString        m_customNewButtonText;
 
     // These must be overridden - must return true on success.
     virtual wxString ArrayGet( size_t index ) = 0;
@@ -929,6 +928,7 @@ public:
         if ( !custBtText.empty() )
         {
             EnableCustomNewAction();
+            SetNewButtonText(custBtText);
             m_pCallingClass = pcc;
         }
     }

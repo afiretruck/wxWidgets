@@ -422,6 +422,7 @@ enum
     ID_SETPROPERTYVALUE,
     ID_TESTREPLACE,
     ID_SETCOLUMNS,
+    ID_SETVIRTWIDTH,
     ID_TESTXRC,
     ID_ENABLECOMMONVALUES,
     ID_SELECTSTYLE,
@@ -522,6 +523,7 @@ wxBEGIN_EVENT_TABLE(FormMain, wxFrame)
 
     EVT_MENU( ID_CATCOLOURS, FormMain::OnCatColours )
     EVT_MENU( ID_SETCOLUMNS, FormMain::OnSetColumns )
+    EVT_MENU( ID_SETVIRTWIDTH, FormMain::OnSetVirtualWidth )
     EVT_MENU( ID_TESTXRC, FormMain::OnTestXRC )
     EVT_MENU( ID_ENABLECOMMONVALUES, FormMain::OnEnableCommonValues )
     EVT_MENU( ID_SELECTSTYLE, FormMain::OnSelectStyle )
@@ -1157,7 +1159,8 @@ void FormMain::PopulateWithStandardItems ()
     // Set test information for cells in columns 3 and 4
     // (reserve column 2 for displaying units)
     wxPropertyGridIterator it;
-    wxBitmap bmp = wxArtProvider::GetBitmap(wxART_FOLDER);
+    int bmpH = pg->GetGrid()->GetRowHeight() - 2;
+    wxBitmap bmp = wxArtProvider::GetBitmap(wxART_FOLDER, wxART_OTHER, wxSize(bmpH, bmpH));
 
     for ( it = pg->GetGrid()->GetIterator();
           !it.AtEnd();
@@ -1426,7 +1429,7 @@ void FormMain::PopulateWithExamples ()
 
     pg->Append( new wxMultiChoiceProperty( "MultiChoiceProperty", wxPG_LABEL,
                                            tchoices, tchoicesValues ) );
-    pg->SetPropertyAttribute( "MultiChoiceProperty", wxPG_ATTR_MULTICHOICE_USERSTRINGMODE, true );
+    pg->SetPropertyAttribute("MultiChoiceProperty", wxPG_ATTR_MULTICHOICE_USERSTRINGMODE, 1);
 
     pg->Append( new wxSizeProperty( "SizeProperty", "Size", GetSize() ) );
     pg->Append( new wxPointProperty( "PointProperty", "Position", GetPosition() ) );
@@ -1578,7 +1581,7 @@ void FormMain::PopulateWithExamples ()
 
     pid->AppendChild( new wxStringProperty("Latest Release",
                                            wxPG_LABEL,
-                                           "3.0.2"));
+                                           "3.1.2"));
     pid->AppendChild( new wxBoolProperty("Win API",
                                          wxPG_LABEL,
                                          true) );
@@ -1587,10 +1590,9 @@ void FormMain::PopulateWithExamples ()
 
     pg->AppendIn(pid, new wxBoolProperty("QT", wxPG_LABEL, true) );
     pg->AppendIn(pid, new wxBoolProperty("Cocoa", wxPG_LABEL, true) );
-    pg->AppendIn(pid, new wxBoolProperty("BeOS", wxPG_LABEL, false) );
-    pg->AppendIn(pid, new wxStringProperty("Trunk Version", wxPG_LABEL, "3.1.0") );
+    pg->AppendIn(pid, new wxBoolProperty("Haiku", wxPG_LABEL, false) );
+    pg->AppendIn(pid, new wxStringProperty("Trunk Version", wxPG_LABEL, wxVERSION_NUM_DOT_STRING));
     pg->AppendIn(pid, new wxBoolProperty("GTK+", wxPG_LABEL, true) );
-    pg->AppendIn(pid, new wxBoolProperty("Sky OS", wxPG_LABEL, false) );
     pg->AppendIn(pid, new wxBoolProperty("Android", wxPG_LABEL, false) );
 
     AddTestProperties(pg);
@@ -2119,6 +2121,7 @@ FormMain::FormMain(const wxString& title, const wxPoint& pos, const wxSize& size
     menuTry->AppendCheckItem(ID_BOOL_CHECKBOX, "Render Boolean values as checkboxes",
         "Renders Boolean values as checkboxes");
     menuTry->Append(ID_SETCOLUMNS, "Set Number of Columns" );
+    menuTry->Append(ID_SETVIRTWIDTH, "Set Virtual Width");
     menuTry->AppendSeparator();
     menuTry->Append(ID_TESTXRC, "Display XRC sample" );
 
@@ -2571,8 +2574,8 @@ FormMain::OnSetBackgroundColour( wxCommandEvent& event )
 
     if ( col.IsOk() )
     {
-        bool recursively = (event.GetId()==ID_SETBGCOLOURRECUR) ? true : false;
-        pg->SetPropertyBackgroundColour(prop, col, recursively);
+        int flags = (event.GetId()==ID_SETBGCOLOURRECUR) ? wxPG_RECURSE : 0;
+        pg->SetPropertyBackgroundColour(prop, col, flags);
     }
 }
 
@@ -2937,6 +2940,26 @@ void FormMain::OnSetColumns( wxCommandEvent& WXUNUSED(event) )
     if ( colCount >= 2 )
     {
         m_pPropGridManager->SetColumnCount(colCount);
+    }
+}
+
+// -----------------------------------------------------------------------
+
+void FormMain::OnSetVirtualWidth(wxCommandEvent& WXUNUSED(evt))
+{
+    long oldWidth = m_pPropGridManager->GetState()->GetVirtualWidth();
+    long newWidth = oldWidth;
+    {
+        wxNumberEntryDialog dlg(this, "Enter virtual width (-1-2000).", "Width:",
+                                "Change Virtual Width", oldWidth, -1, 2000);
+        if ( dlg.ShowModal() == wxID_OK )
+        {
+            newWidth = dlg.GetValue();
+        }
+    }
+    if ( newWidth != oldWidth )
+    {
+        m_pPropGridManager->GetGrid()->SetVirtualWidth((int)newWidth);
     }
 }
 

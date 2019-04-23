@@ -409,11 +409,12 @@ au_check_word( GtkTextIter *s, GtkTextIter *e )
     gtk_text_iter_forward_char(&end);
 
     wxGtkString text(gtk_text_iter_get_text( &start, &end ));
-    size_t len = strlen(text), prefix_len;
+    size_t len = strlen(text);
     size_t n;
 
     for( n = 0; n < WXSIZEOF(URIPrefixes); ++n )
     {
+        size_t prefix_len;
         prefix_len = strlen(URIPrefixes[n]);
         if((len > prefix_len) && !wxStrnicmp(text, URIPrefixes[n], prefix_len))
             break;
@@ -1350,17 +1351,14 @@ void wxTextCtrl::SetEditable( bool editable )
     }
 }
 
-bool wxTextCtrl::Enable( bool enable )
+void wxTextCtrl::DoEnable(bool enable)
 {
-    if (!wxWindowBase::Enable(enable))
-    {
-        // nothing to do
-        return false;
-    }
+    if ( !m_text )
+        return;
+
+    wxTextCtrlBase::DoEnable(enable);
 
     gtk_widget_set_sensitive( m_text, enable );
-
-    return true;
 }
 
 void wxTextCtrl::MarkDirty()
